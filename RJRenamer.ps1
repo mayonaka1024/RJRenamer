@@ -1,5 +1,14 @@
 Import-Module AngleParse
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+$WarningPreference = "Continue"
+$VerbosePreference = "Continue"
+$DebugPreference = "Continue"
+
+######################################################################
+### 関数定義
+######################################################################
 # ファイル名禁止文字全角置換くん
 Function replaceForbiddenChar($fileName) {
   $invalidChar = @{'"' = '”'; '<' = '＜'; '>' = '＞'; '|' = '｜'; '*' = '＊'; '?' = '？'; '\' = '￥'; '/' = '／'; }
@@ -12,6 +21,9 @@ Function replaceForbiddenChar($fileName) {
 }
 
 
+######################################################################
+### 処理実行
+######################################################################
 # パラメータ配列をパス別に再構築.
 $files_args = New-Object System.Collections.ArrayList
 foreach ($arg in $Args) {
@@ -24,6 +36,7 @@ foreach ($arg in $Args) {
   }
 }
 
+# メイン処理
 foreach ($file_path in $files_args) {
   Write-Output $file_path
   $RJNumber = (Get-Item $file_path).BaseName
@@ -39,8 +52,7 @@ foreach ($file_path in $files_args) {
   if ($type -eq "ボイス・ASMR") {
     Write-Output("Type:Voice/ASMR")
     $CV = $DlSitePage | Select-HtmlContent $deteilSelector
-    $parsedCV = ((($CV -match "声優") -replace "声優", "") -replace "\s", "")
-    $newFileName = "[$circleName($parsedCV)]$title.zip"
+    $parsedAuthor = ((($CV -match "声優") -replace "声優", "") -replace "\s", "")
   }
   else {
     Write-Output("Type:Other")
@@ -52,10 +64,11 @@ foreach ($file_path in $files_args) {
       $parsedAuthor = ((($author -match "イラスト") -replace "イラスト", "") -replace "\s", "")
       Write-Output($parsedAuthor)
     }
-    $newFileName = "[$circleName($parsedAuthor)]$title.zip"
   }
-
+  $genre = ($type.Split(" "))[0]
+  $newFileName = "($genre)[$circleName ($parsedAuthor)]$title"
+  $ext = [IO.Path]::GetExtension($file_path)
   $escapedNewFileName = replaceForbiddenChar($newFileName)
   Write-Output $escapedNewFileName
-  Rename-Item $file_path $escapedNewFileName
+  Rename-Item $file_path $escapedNewFileName$ext
 }
