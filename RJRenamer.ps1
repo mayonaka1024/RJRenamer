@@ -61,12 +61,12 @@ foreach ($file_path in $files_args) {
     Write-Output([bool]$parsedAuthor)
     if (![bool]$parsedAuthor) {
       Write-Output("GetIllust")
-      $parsedAuthor = ((($author -match "イラスト") -replace "イラスト", "") -replace "\s", "")
+      $parsedAuthor = ((($author -match "イラスト") -replace "イラスト", "") -replace "\s", "") -replace "作品形式CG・", ""
       Write-Output($parsedAuthor)
     }
   }
   $genre = ($type.Split(" "))[0]
-  $newFileName = "($genre)[$circleName ($parsedAuthor)]$title"
+  $newFileName = "($genre) [$circleName ($parsedAuthor)] $title [$RJNumber]"
   $ext = [IO.Path]::GetExtension($file_path)
   $escapedNewFileName = replaceForbiddenChar($newFileName)
   Write-Output $escapedNewFileName
