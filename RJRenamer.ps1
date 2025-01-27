@@ -20,24 +20,17 @@ Function replaceForbiddenChar($fileName) {
   return $fileName
 }
 
-
-######################################################################
-### 処理実行
-######################################################################
-# パラメータ配列をパス別に再構築.
-$files_args = New-Object System.Collections.ArrayList
-foreach ($arg in $Args) {
-  if ([System.IO.Path]::IsPathRooted($arg)) {
-    $files_args.Add($arg) | Out-Null
+Function dlfanzajudge($file_path) {
+  $file_name = [System.IO.Path]::GetFileName("$file_path")
+  if ($file_name -like "RJ") {
+    return True
   }
-  else {
-    # ファイルパスの先頭でない文字列は前の文字列の後にスペースで結合.
-    $files_args[$files_args.Count - 1] = $files_args[$files_args.Count - 1] + " " + $arg
+  elseif ($file_name -like "d_") {
+    return False
   }
 }
 
-# メイン処理
-foreach ($file_path in $files_args) {
+Function dlsiteRename($file_path) {
   Write-Output $file_path
   $RJNumber = (Get-Item $file_path).BaseName
   Write-Output ( $RJNumber)
@@ -72,3 +65,59 @@ foreach ($file_path in $files_args) {
   Write-Output $escapedNewFileName
   Rename-Item $file_path $escapedNewFileName$ext
 }
+
+function fanzaRename($file_path) {
+  Write-Output $file_path
+  $d_Number = (Get-Item $file_path).BaseName
+  Write-Output ( $d_Number)
+  #cookie設定
+  $mySession = New-Object -TypeName Microsoft.PowerShell.Commands.WebRequestSession
+  $myCookie = New-Object -TypeName System.Net.Cookie
+  #必須のNameを設定する
+  $myCookie.Name = "age_check_done"
+  $myCookie.Value = 1
+  $myCookie.domain = "dmm.co.jp"
+  $mySession.Cookies.Add($myCookie)
+  $circleNameSelector = "#w > div.l-areaProductTitle > div.m-circleInfo.u-common__clearfix > div > div:nth-child(1) > div > div > div > a"
+  $titleSelector = "#w > div.l-areaProductTitle > div.m-productHeader > div > div > div.m-productInfo > div > div > div.productTitle > div > h1"
+  $typeSelector = "#l-areaVariableBoxWrap > div > div.l-areaVariableBoxGroup > div.l-areaProductInfo > div.m-productInformation > div > div:nth-child(1) > dl > dd > a"
+  $fanzaPage = Invoke-WebRequest "https://www.dmm.co.jp/dc/doujin/-/detail/=/cid=$d_Number/"  -WebSession $mySession
+  $circleName = $fanzaPage | Select-HtmlContent $circleNameSelector
+  $title = $fanzaPage | Select-HtmlContent $titleSelector
+  $type = $fanzaPage | Select-HtmlContent $typeSelector
+  Write-Output($type)
+  $title = $title -replace "  * ", " "
+  $title = $title -replace "`n", " "
+  $newFileName = "($type) [$circleName] $title [$d_Number]"
+  $ext = [IO.Path]::GetExtension($file_path)
+  $escapedNewFileName = replaceForbiddenChar($newFileName)
+  Write-Output $escapedNewFileName
+  Rename-Item $file_path $escapedNewFileName$ext
+}
+
+######################################################################
+### 処理実行
+######################################################################
+Function main($func_args) {
+  # パラメータ配列をパス別に再構築.
+  $files_args = New-Object System.Collections.ArrayList
+  foreach ($arg in $func_args) {
+    if ([System.IO.Path]::IsPathRooted($arg)) {
+      $files_args.Add($arg) | Out-Null
+    }
+    else {
+      # ファイルパスの先頭でない文字列は前の文字列の後にスペースで結合.
+      $files_args[$files_args.Count - 1] = $files_args[$files_args.Count - 1] + " " + $arg
+    }
+  }
+  foreach ($file_path in $files_args) {
+    if (dlfanzajudge($file_path)) {
+      dlsiteRename($file_path)
+    }
+    else {
+      fanzaRename($file_path)
+    }
+  }
+}
+
+main($Args)
