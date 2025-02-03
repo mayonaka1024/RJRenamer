@@ -21,12 +21,17 @@ Function replaceForbiddenChar($fileName) {
 }
 
 Function dlfanzajudge($file_path) {
-  $file_name = [System.IO.Path]::GetFileName("$file_path")
-  if ($file_name -like "RJ") {
-    return True
+  Write-Debug "judge"
+  Write-Debug $file_path
+  $file_name = (Get-Item $file_path).BaseName
+  Write-Debug $file_name
+  if ($file_name -match "RJ.*") {
+    Write-Debug ("DLSite")
+    return 1
   }
-  elseif ($file_name -like "d_") {
-    return False
+  elseif ($file_name -match "d_.*") {
+    Write-Debug ("FANZA")
+    return 0
   }
 }
 
@@ -43,33 +48,33 @@ Function dlsiteRename($file_path) {
   $title = $DlSitePage | Select-HtmlContent $titleSelector
   $type = $DlSitePage | Select-HtmlContent $typeSelector
   if ($type -eq "ボイス・ASMR") {
-    Write-Output("Type:Voice/ASMR")
+    Write-Debug("Type:Voice/ASMR")
     $CV = $DlSitePage | Select-HtmlContent $deteilSelector
     $parsedAuthor = ((($CV -match "声優") -replace "声優", "") -replace "\s", "")
   }
   else {
-    Write-Output("Type:Other")
+    Write-Debug("Type:Other")
     $author = $DlSitePage | Select-HtmlContent $deteilSelector
     $parsedAuthor = ((($author -match "作者") -replace "作者", "") -replace "\s", "")
-    Write-Output([bool]$parsedAuthor)
+    Write-Debug([bool]$parsedAuthor)
     if (![bool]$parsedAuthor) {
-      Write-Output("GetIllust")
+      Write-Debug("GetIllust")
       $parsedAuthor = ((($author -match "イラスト") -replace "イラスト", "") -replace "\s", "") -replace "作品形式CG・", ""
-      Write-Output($parsedAuthor)
+      Write-Debug($parsedAuthor)
     }
   }
   $genre = ($type.Split(" "))[0]
   $newFileName = "($genre) [$circleName ($parsedAuthor)] $title [$RJNumber]"
   $ext = [IO.Path]::GetExtension($file_path)
   $escapedNewFileName = replaceForbiddenChar($newFileName)
-  Write-Output $escapedNewFileName
+  Write-Debug $escapedNewFileName
   Rename-Item $file_path $escapedNewFileName$ext
 }
 
 function fanzaRename($file_path) {
-  Write-Output $file_path
+  Write-Debug $file_path
   $d_Number = (Get-Item $file_path).BaseName
-  Write-Output ( $d_Number)
+  Write-Debug ( $d_Number)
   #cookie設定
   $mySession = New-Object -TypeName Microsoft.PowerShell.Commands.WebRequestSession
   $myCookie = New-Object -TypeName System.Net.Cookie
@@ -85,13 +90,13 @@ function fanzaRename($file_path) {
   $circleName = $fanzaPage | Select-HtmlContent $circleNameSelector
   $title = $fanzaPage | Select-HtmlContent $titleSelector
   $type = $fanzaPage | Select-HtmlContent $typeSelector
-  Write-Output($type)
+  Write-Debug($type)
   $title = $title -replace "  * ", " "
   $title = $title -replace "`n", " "
   $newFileName = "($type) [$circleName] $title [$d_Number]"
   $ext = [IO.Path]::GetExtension($file_path)
   $escapedNewFileName = replaceForbiddenChar($newFileName)
-  Write-Output $escapedNewFileName
+  Write-Debug $escapedNewFileName
   Rename-Item $file_path $escapedNewFileName$ext
 }
 
@@ -111,10 +116,13 @@ Function main($func_args) {
     }
   }
   foreach ($file_path in $files_args) {
-    if (dlfanzajudge($file_path)) {
+    $judge = dlfanzajudge($file_path)
+    if ($judge) {
+      Write-Debug "dlsite"
       dlsiteRename($file_path)
     }
     else {
+      Write-Debug "fanza"
       fanzaRename($file_path)
     }
   }
