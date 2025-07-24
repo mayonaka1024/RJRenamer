@@ -56,11 +56,9 @@ Function dlsiteRename($file_path) {
     Write-Debug("Type:Other")
     $author = $DlSitePage | Select-HtmlContent $deteilSelector
     $parsedAuthor = ((($author -match "作者") -replace "作者", "") -replace "\s", "")
-    Write-Debug([bool]$parsedAuthor)
     if (![bool]$parsedAuthor) {
       Write-Debug("GetIllust")
       $parsedAuthor = ((($author -match "イラスト") -replace "イラスト", "") -replace "\s", "") -replace "作品形式CG・", ""
-      Write-Debug($parsedAuthor)
     }
   }
   $genre = ($type.Split(" "))[0]
@@ -85,12 +83,13 @@ function fanzaRename($file_path) {
   $mySession.Cookies.Add($myCookie)
   $circleNameSelector = "#w > div.l-areaProductTitle > div.m-circleInfo.u-common__clearfix > div > div:nth-child(1) > div > div > div > a"
   $titleSelector = "#w > div.l-areaProductTitle > div.m-productHeader > div > div > div.m-productInfo > div > div > div.productTitle > div > h1"
-  $typeSelector = "#l-areaVariableBoxWrap > div > div.l-areaVariableBoxGroup > div.l-areaProductInfo > div.m-productInformation > div > div:nth-child(1) > dl > dd > a"
+  $typeSelector = "#w > div.l-areaVariableBoxWrap > div > div.l-areaVariableBoxGroup > div.l-areaProductInfo > div.m-productInformation > div > div:nth-child(1) > dl > dd > a"
+
   $fanzaPage = Invoke-WebRequest "https://www.dmm.co.jp/dc/doujin/-/detail/=/cid=$d_Number/"  -WebSession $mySession
   $circleName = $fanzaPage | Select-HtmlContent $circleNameSelector
   $title = $fanzaPage | Select-HtmlContent $titleSelector
   $type = $fanzaPage | Select-HtmlContent $typeSelector
-  Write-Debug($type)
+  # Write-Debug($type)
   $title = $title -replace "  * ", " "
   $title = $title -replace "`n", " "
   $newFileName = "($type) [$circleName] $title [$d_Number]"
