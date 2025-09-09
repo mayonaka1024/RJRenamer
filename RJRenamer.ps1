@@ -11,7 +11,7 @@ $DebugPreference = "Continue"
 ######################################################################
 # ファイル名禁止文字全角置換くん
 Function replaceForbiddenChar($fileName) {
-  $invalidChar = @{'"' = '”'; '<' = '＜'; '>' = '＞'; '|' = '｜'; '*' = '＊'; '?' = '？'; '\' = '￥'; '/' = '／'; }
+  $invalidChar = @{'"' = '”'; '<' = '＜'; '>' = '＞'; '|' = '｜'; '*' = '＊'; '?' = '？'; '\' = '￥'; '/' = '／'; ':' = '：'; }
   foreach ($c in $invalidChar.GetEnumerator()) {
     # Write-Output $c
     $fileName = $fileName.Replace($c.Key, $c.Value)
@@ -83,16 +83,18 @@ function fanzaRename($file_path) {
   $mySession.Cookies.Add($myCookie)
   $circleNameSelector = "#w > div.l-areaProductTitle > div.m-circleInfo.u-common__clearfix > div > div:nth-child(1) > div > div > div > a"
   $titleSelector = "#w > div.l-areaProductTitle > div.m-productHeader > div > div > div.m-productInfo > div > div > div.productTitle > div > h1"
-  $typeSelector = "#w > div.l-areaVariableBoxWrap > div > div.l-areaVariableBoxGroup > div.l-areaProductInfo > div.m-productInformation > div > div:nth-child(1) > dl > dd > a"
+  $typeSelector = 'dt.informationList__ttl:contains("作品形式") + dd > a'
+  $deteilSelector = 'dt.informationList__ttl:contains("作者") + dd > a'
 
   $fanzaPage = Invoke-WebRequest "https://www.dmm.co.jp/dc/doujin/-/detail/=/cid=$d_Number/"  -WebSession $mySession
   $circleName = $fanzaPage | Select-HtmlContent $circleNameSelector
   $title = $fanzaPage | Select-HtmlContent $titleSelector
   $type = $fanzaPage | Select-HtmlContent $typeSelector
+  $auther = $fanzaPage | Select-HtmlContent $deteilSelector
   # Write-Debug($type)
   $title = $title -replace "  * ", " "
   $title = $title -replace "`n", " "
-  $newFileName = "($type) [$circleName] $title [$d_Number]"
+  $newFileName = "($type) [$circleName ($auther)] $title [$d_Number]"
   $ext = [IO.Path]::GetExtension($file_path)
   $escapedNewFileName = replaceForbiddenChar($newFileName)
   Write-Debug $escapedNewFileName
